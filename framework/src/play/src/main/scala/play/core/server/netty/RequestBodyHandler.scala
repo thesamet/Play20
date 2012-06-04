@@ -40,7 +40,7 @@ private[server] trait RequestBodyHandler {
 
       if (!redeemed) {
         val itPromise = Promise[Iteratee[Array[Byte], Either[Result, R]]]()
-        val current = iteratee.single.swap(Iteratee.flatten(itPromise))
+        val current = iteratee.single.swap(Iteratee.flatten(itPromise.future))
         val next = current.pureFlatFold[Array[Byte], Either[Result, R]] {
           case Step.Done(_, _) => current
           case Step.Cont(k) => k(chunk)
@@ -69,7 +69,7 @@ private[server] trait RequestBodyHandler {
       }
     }
 
-    (p, new SimpleChannelUpstreamHandler {
+    (p.future, new SimpleChannelUpstreamHandler {
       override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
         e.getMessage match {
 
