@@ -498,7 +498,9 @@ object Concurrent {
 
   trait PatchPanel[E] {
 
-    def patchIn(e: Enumerator[E]): Boolean
+    type B
+
+    def patchIn(e: Enumerator[E]): Option[Promise[play.api.libs.iteratee.Iteratee[E,Option[B]]]]
 
     def closed(): Boolean
 
@@ -567,12 +569,15 @@ object Concurrent {
       }
 
       patcher(new PatchPanel[E] {
+        
+        type B = A
+
         val ref: Ref[Ref[Iteratee[E, Option[A]]]] = Ref(Ref(it.map(Some(_))))
 
         def closed() = isClosed
 
-        def patchIn(e: Enumerator[E]): Boolean = {
-          !(closed() || {
+        def patchIn(e: Enumerator[E]): Option[Promise[play.api.libs.iteratee.Iteratee[E,Option[B]]]] = {
+          if (!closed()) {
             val newRef = atomic { implicit txn =>
               val enRef = ref()
               val it = enRef.swap(Done(None, Input.Empty))
@@ -580,9 +585,9 @@ object Concurrent {
               ref() = newRef
               newRef
             }
-            e |>> refIteratee(newRef) //TODO maybe do something if the enumerator is done, maybe not
-            false
-          })
+            val p = e |>> refIteratee(newRef)
+            Some(p) 
+          } else None
         }
       })
 

@@ -70,15 +70,14 @@ object EnumeratorsSpec extends Specification {
 "Enumerator's PatchPanel" should {
 
   "allow to patch in different Enumerators" in {
-      import play.api.libs.concurrent.Promise
     var pp:Concurrent.PatchPanel[Int] = null
     val e = Concurrent.patchPanel[Int](p => pp = p)
     val i1 = Iteratee.fold[Int,Int](0){(s,i) => println(i);s+i}
     val sum = e |>> i1
-    pp.patchIn(Enumerator(1,2,3,4))
+    val promise = pp.patchIn(Enumerator(1,2,3,4)).get
+    promise.await
     pp.patchIn(Enumerator.eof)
     sum.flatMap(_.run).value.get must equalTo(10)
-
   }
 
 }
