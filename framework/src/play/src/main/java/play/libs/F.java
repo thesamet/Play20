@@ -166,7 +166,7 @@ public class F {
          * @return The promised object
          * @throws RuntimeException if the calculation providing the promise threw an exception
          */
-        public A get() {
+         public A get() {
             return new play.api.libs.concurrent.PlayPromise<A>(promise).value1().get();
         }
         
@@ -198,7 +198,7 @@ public class F {
         * @param another 
         */
         public <B> Promise<Either<A,B>> or(Promise<B> another) {
-            return (new Promise(this.promise.or(another.getWrappedPromise()))).map(
+            return (new Promise(new play.api.libs.concurrent.PlayPromise(this.promise).or(another.getWrappedPromise()))).map(
                  new Function<scala.Either<A,B>,Either<A,B>>() {
                     public Either<A,B> apply(scala.Either<A,B> scalaEither) {
                         if (scalaEither.left().toOption().isDefined() == true) 
